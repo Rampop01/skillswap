@@ -1,0 +1,21 @@
+{
+  "name": "skillswap-deployment",
+  "version": "1.0.0",
+  "description": "SkillSwap smart contract deployment for Hedera",
+  "main": "deploy.js",
+  "scripts": {
+    "deploy": "node deploy.js",
+    "build": "forge build",
+    "test": "forge test"
+  },
+  "dependencies": {
+    "@hashgraph/sdk": "^2.7.0",
+    "dotenv": "^16.3.1"
+  },
+  "devDependencies": {
+    "solc": "^0.8.19"
+  },
+  "keywords": ["hedera", "smart-contract", "skillswap", "deployment"],
+  "author": "SkillSwap Team",
+  "license": "MIT"
+}
