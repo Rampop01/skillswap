@@ -4,6 +4,17 @@ export const CONTRACT_ID = "0.0.7137731"
 // Hedera Network Configuration
 export const HEDERA_NETWORK = "testnet"
 
+export async function fetchContractEvmAddress(contractId: string): Promise<`0x${string}` | null> {
+  try {
+    const res = await fetch(`https://testnet.mirrornode.hedera.com/api/v1/contracts/${contractId}`)
+    if (!res.ok) return null
+    const data = await res.json()
+    return (data.evm_address as string)?.startsWith("0x") ? (data.evm_address as `0x${string}`) : null
+  } catch {
+    return null
+  }
+}
+
 // Contract ABI - This is a simplified version for frontend interaction
 export const CONTRACT_ABI = [
   {

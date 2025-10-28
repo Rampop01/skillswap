@@ -2,6 +2,7 @@
 
 import { useState } from "react"
 import { motion } from "framer-motion"
+import { ConnectButton } from "@rainbow-me/rainbowkit"
 import { 
   Sparkles, 
   Users, 
@@ -85,11 +86,9 @@ export default function Home() {
             SkillSwap
           </span>
         </div>
-        <div className="flex items-center space-x-4">
-          <button className="px-6 py-2 rounded-lg bg-gray-800 hover:bg-gray-700 transition-colors text-white font-medium">
-            Connect Wallet
-          </button>
-        </div>
+                <div className="flex items-center space-x-4">
+                  <ConnectButton />
+                </div>
       </nav>
 
       {/* Hero Section */}

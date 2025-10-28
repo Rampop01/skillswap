@@ -1,3 +1,11 @@
+import { createPublicClient, http } from "viem"
+import { hederaTestnet } from "./wallet"
+
+export const publicClient = createPublicClient({
+  chain: hederaTestnet,
+  transport: http(hederaTestnet.rpcUrls.default.http[0]),
+})
+
 import { type ClassValue, clsx } from "clsx"
 import { twMerge } from "tailwind-merge"
 
