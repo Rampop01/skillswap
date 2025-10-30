@@ -20,7 +20,7 @@ export const hederaTestnet = defineChain({
 
 export const wagmiConfig = getDefaultConfig({
   appName: "SkillSwap",
-  projectId: "skillswap-wallet-connect", // replace with a real WalletConnect Project ID for production
+  projectId: process.env.NEXT_PUBLIC_WALLETCONNECT_PROJECT_ID || "skillswap-wallet-connect",
   chains: [hederaTestnet],
   transports: {
     [hederaTestnet.id]: http(hederaTestnet.rpcUrls.default.http[0]),

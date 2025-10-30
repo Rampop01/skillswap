@@ -1,0 +1,8 @@
+{
+  "contractId": "0.0.7158163",
+  "network": "testnet",
+  "accountId": "0.0.6496415",
+  "timestamp": "2025-10-29T18:30:14.417Z",
+  "explorer": "https://hashscan.io/testnet/contract/0.0.7158163",
+  "artifact": "out/SkillSwapSimple.sol/SkillSwap.json"
+}

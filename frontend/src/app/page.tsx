@@ -2,7 +2,7 @@
 
 import { useState } from "react"
 import { motion } from "framer-motion"
-import { ConnectButton } from "@rainbow-me/rainbowkit"
+import { useConnectModal } from "@rainbow-me/rainbowkit"
 import { 
   Sparkles, 
   Users, 
@@ -22,6 +22,7 @@ import Link from "next/link"
 export default function Home() {
   const [isRegistered, setIsRegistered] = useState(false)
   const [showRegisterForm, setShowRegisterForm] = useState(false)
+  const { openConnectModal } = useConnectModal()
 
   const features = [
     {
@@ -76,20 +77,7 @@ export default function Home() {
       
       {/* Content Overlay */}
       <div className="relative z-10 min-h-screen bg-gradient-to-b from-black/20 via-transparent to-black/40">
-      {/* Navigation */}
-      <nav className="container mx-auto px-6 py-6 flex items-center justify-between">
-        <div className="flex items-center space-x-2">
-          <div className="w-10 h-10 bg-gradient-to-br from-blue-500 to-purple-600 rounded-lg flex items-center justify-center">
-            <Sparkles className="w-6 h-6 text-white" />
-          </div>
-          <span className="text-2xl font-bold bg-gradient-to-r from-blue-400 to-purple-600 bg-clip-text text-transparent">
-            SkillSwap
-          </span>
-        </div>
-                <div className="flex items-center space-x-4">
-                  <ConnectButton />
-                </div>
-      </nav>
+              {/* Navigation moved to shared Navbar */}
 
       {/* Hero Section */}
       <section className="container mx-auto px-6 py-20">
@@ -252,9 +240,9 @@ export default function Home() {
                 SkillSwap
               </span>
             </div>
-            <div className="text-gray-400 text-sm">
-              Built on Hedera Hashgraph • Contract: 0.0.7137731
-            </div>
+          <div className="text-gray-400 text-sm">
+            Built on Hedera Hashgraph • Contract: 0.0.7158163
+          </div>
           </div>
         </div>
       </footer>

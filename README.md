@@ -4,11 +4,12 @@
 
 ✅ **Contract Deployed Successfully!**
 
-- **Contract ID**: `0.0.7137731`
+- **Contract ID**: `0.0.7158163`
+- **EVM Address**: `0x00000000000000000000000000000000006d3993`
 - **Network**: Hedera Testnet
-- **Explorer**: https://hashscan.io/testnet/contract/0.0.7137731
+- **Explorer**: https://hashscan.io/testnet/contract/0.0.7158163
 - **Account ID**: `0.0.6496415`
-- **Deployment Time**: ${new Date().toISOString()}
+- **Deployment Time**: January 29, 2025
 
 ## What Was Deployed
 

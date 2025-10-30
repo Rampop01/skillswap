@@ -15,52 +15,157 @@ import {
   GraduationCap,
   Heart,
   TrendingUp,
-  Award
+  Award,
+  X,
+  RefreshCcw
 } from "lucide-react"
 import Link from "next/link"
+import { readTotalListings, readListing } from "../../lib/utils"
+import { useAccount, useWriteContract, useWaitForTransactionReceipt } from "wagmi"
+import { CONTRACT_EVM_ADDRESS, CONTRACT_ABI } from "../../lib/contract"
+import { readUser } from "../../lib/utils"
+import { useConnectModal } from "@rainbow-me/rainbowkit"
+import toast from "react-hot-toast"
 
 export default function SkillsPage() {
+  const { openConnectModal } = useConnectModal()
   const [searchQuery, setSearchQuery] = useState("")
   const [filter, setFilter] = useState("all")
+  const [loading, setLoading] = useState(true)
+  const [error, setError] = useState<string | null>(null)
+  const [listings, setListings] = useState<Array<{
+    id: number
+    skillsOffered: string
+    skillsWanted: string
+    creator: string
+    description: string
+    reputation: number
+    timestamp: string
+  }>>([])
+  const [proposeForListingId, setProposeForListingId] = useState<number | null>(null)
+  const [proposalText, setProposalText] = useState("")
+  
+  // Create listing modal state
+  const [showCreateModal, setShowCreateModal] = useState(false)
+  const [createForm, setCreateForm] = useState({
+    skillOffered: "",
+    skillWanted: "",
+    description: ""
+  })
+  
+  const { address, isConnected } = useAccount()
+  const { writeContractAsync, error: writeError, isPending } = useWriteContract()
+  const [txHash, setTxHash] = useState<`0x${string}` | undefined>(undefined)
+  const [refreshKey, setRefreshKey] = useState(0)
+  const { isLoading: isConfirming, isSuccess } = useWaitForTransactionReceipt({
+    hash: txHash,
+  })
 
-  const mockListings = [
-    {
-      id: 1,
-      skillsOffered: "Web Development",
-      skillsWanted: "Graphic Design",
-      creator: "0x1234...5678",
-      description: "Looking for a designer to create my brand identity. I can help build your website or web app in return.",
-      reputation: 150,
-      timestamp: "2 days ago"
-    },
-    {
-      id: 2,
-      skillsOffered: "Graphic Design",
-      skillsWanted: "Web Development",
-      creator: "0xabcd...efgh",
-      description: "Professional logo and brand design services. Need help with my portfolio website.",
-      reputation: 200,
-      timestamp: "1 day ago"
-    },
-    {
-      id: 3,
-      skillsOffered: "Music Production",
-      skillsWanted: "Video Editing",
-      creator: "0x9876...5432",
-      description: "Can produce original beats and music. Looking for video editing help for my YouTube channel.",
-      reputation: 120,
-      timestamp: "3 days ago"
-    },
-    {
-      id: 4,
-      skillsOffered: "Photography",
-      skillsWanted: "Social Media Marketing",
-      creator: "0x4567...8901",
-      description: "Professional event and portrait photography. Need social media strategy expertise.",
-      reputation: 180,
-      timestamp: "4 days ago"
-    },
-  ]
+  useEffect(() => {
+    let mounted = true
+    async function load() {
+      try {
+        setLoading(true)
+        setError(null)
+        console.log("🔄 Loading listings...")
+        const total = await readTotalListings()
+        console.log("📊 Total listings to fetch:", total)
+        const items: typeof listings = []
+        for (let i = 1; i <= total; i++) {
+          const l = await readListing(i)
+          if (!l || !l.isActive) {
+            console.log(`⏭️ Skipping listing ${i} (inactive or error)`)
+            continue
+          }
+          items.push({
+            id: Number(l.id),
+            skillsOffered: l.skillOffered,
+            skillsWanted: l.skillWanted,
+            creator: `${l.creator.slice(0,6)}...${l.creator.slice(-4)}`,
+            description: l.description,
+            reputation: 0,
+            timestamp: new Date(Number(l.createdAt) * 1000).toLocaleDateString(),
+          })
+        }
+        console.log(`✅ Loaded ${items.length} active listings`)
+        if (mounted) setListings(items)
+      } catch (e: any) {
+        console.error("❌ Error loading listings:", e)
+        if (mounted) setError(e.message || "Failed to load listings")
+      } finally {
+        if (mounted) setLoading(false)
+      }
+    }
+    load()
+    return () => { mounted = false }
+  }, [refreshKey])
+
+  // Handle successful transaction
+  useEffect(() => {
+    if (isSuccess && txHash) {
+      setShowCreateModal(false)
+      setCreateForm({ skillOffered: "", skillWanted: "", description: "" })
+      toast.success("Listing created successfully")
+      const url = `https://hashscan.io/testnet/transaction/${txHash}`
+      toast((t) => (
+        <span>
+          Confirmed. <a href={url} target="_blank" rel="noreferrer" className="underline text-blue-400">View on HashScan</a>
+        </span>
+      ))
+      setRefreshKey(prev => prev + 1)
+      setTxHash(undefined)
+    }
+  }, [isSuccess, txHash])
+
+  const handleCreateListing = async () => {
+    if (!isConnected || !address) {
+      toast.error("Please connect your wallet first")
+      return
+    }
+    
+    if (!createForm.skillOffered || !createForm.skillWanted || !createForm.description) {
+      toast.error("Please fill in all fields")
+      return
+    }
+
+    try {
+      // Optimistic auto-register. If already registered, continue silently.
+      if (address) {
+        try {
+          const reg = writeContractAsync({
+            chainId: 296,
+            address: CONTRACT_EVM_ADDRESS,
+            abi: CONTRACT_ABI,
+            functionName: "registerUser",
+            args: ["SkillSwap User", [createForm.skillOffered || ""].filter(Boolean), [createForm.skillWanted || ""].filter(Boolean)],
+          })
+          await toast.promise(reg, { loading: "Registering user...", success: "Registered", error: "Already registered? Proceeding..." })
+        } catch (e) {
+          // ignore and proceed to create listing
+        }
+      }
+
+      const p = writeContractAsync({
+        chainId: 296,
+        address: CONTRACT_EVM_ADDRESS,
+        abi: CONTRACT_ABI,
+        functionName: "createSkillListing",
+        args: [createForm.skillOffered, createForm.skillWanted, createForm.description],
+      })
+      const hash = (await toast.promise(p, {
+        loading: "Submitting transaction...",
+        success: "Submitted. Awaiting confirmation...",
+        error: "Transaction failed",
+      })) as `0x${string}`
+      setTxHash(hash)
+      toast("View on HashScan", {
+        icon: "🔗",
+      })
+    } catch (err) {
+      console.error("Error creating listing:", err)
+      toast.error("Failed to create listing")
+    }
+  }
 
   const categories = [
     { id: "all", label: "All", icon: <TrendingUp className="w-5 h-5" /> },
@@ -82,25 +187,7 @@ export default function SkillsPage() {
 
   return (
     <div className="min-h-screen bg-gradient-to-b from-black via-gray-950 to-black">
-      {/* Navigation */}
-      <nav className="container mx-auto px-6 py-6 flex items-center justify-between">
-        <Link href="/" className="flex items-center space-x-2">
-          <div className="w-10 h-10 bg-gradient-to-br from-blue-500 to-purple-600 rounded-lg flex items-center justify-center">
-            <Search className="w-6 h-6 text-white" />
-          </div>
-          <span className="text-2xl font-bold bg-gradient-to-r from-blue-400 to-purple-600 bg-clip-text text-transparent">
-            SkillSwap
-          </span>
-        </Link>
-        <div className="flex items-center space-x-4">
-          <Link href="/" className="px-4 py-2 text-gray-400 hover:text-white transition-colors">
-            Home
-          </Link>
-          <button className="px-6 py-2 bg-gradient-to-r from-blue-500 to-purple-600 rounded-lg hover:from-blue-600 hover:to-purple-700 transition-colors text-white font-medium">
-            Create Listing
-          </button>
-        </div>
-      </nav>
+      {/* Navigation moved to shared Navbar */}
 
       <div className="container mx-auto px-6 py-12">
         {/* Header */}
@@ -113,12 +200,21 @@ export default function SkillsPage() {
           <h1 className="text-5xl font-bold mb-4 bg-gradient-to-r from-blue-400 via-purple-500 to-pink-500 bg-clip-text text-transparent">
             Browse Skill Listings
           </h1>
-          <p className="text-gray-400 text-lg">
+          <p className="text-gray-400 text-lg mb-6">
             Discover skills to trade and find your perfect match
           </p>
+          {isConnected && (
+            <button 
+              onClick={() => setShowCreateModal(true)}
+              className="px-8 py-3 bg-gradient-to-r from-blue-500 to-purple-600 rounded-xl font-semibold hover:from-blue-600 hover:to-purple-700 transition-all transform hover:scale-105 flex items-center gap-2 mx-auto"
+            >
+              <Plus className="w-5 h-5" />
+              Create New Listing
+            </button>
+          )}
         </motion.div>
 
-        {/* Search and Filter */}
+        {/* Controls */}
         <motion.div
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
@@ -136,7 +232,7 @@ export default function SkillsPage() {
             />
           </div>
 
-          {/* Category Filters */}
+          {/* Category Filters + Refresh */}
           <div className="flex flex-wrap gap-3">
             {categories.map((category) => (
               <button
@@ -152,12 +248,58 @@ export default function SkillsPage() {
                 {category.label}
               </button>
             ))}
+            <button
+              onClick={() => {
+                ;(async () => {
+                  setLoading(true)
+                  setError(null)
+                  const total = await readTotalListings()
+                  const items: typeof listings = []
+                  for (let i = 1; i <= total; i++) {
+                    const l = await readListing(i)
+                    if (!l || !l.isActive) continue
+                    items.push({
+                      id: Number(l.id),
+                      skillsOffered: l.skillOffered,
+                      skillsWanted: l.skillWanted,
+                      creator: `${l.creator.slice(0,6)}...${l.creator.slice(-4)}`,
+                      description: l.description,
+                      reputation: 0,
+                      timestamp: "",
+                    })
+                  }
+                  setListings(items)
+                  setLoading(false)
+                  toast.success("Refreshed")
+                })()
+              }}
+              className="px-4 py-2 rounded-lg bg-gray-800 hover:bg-gray-700 text-white"
+            >
+              Refresh
+            </button>
           </div>
         </motion.div>
 
+        {/* Loading / Error */}
+        {loading && (
+          <div className="text-center text-gray-400 py-16">Loading listings...</div>
+        )}
+        {error && (
+          <div className="text-center py-16">
+            <h3 className="text-2xl font-semibold mb-2 text-gray-300">No listings yet</h3>
+            <p className="text-gray-500 mb-6">Connect your wallet and create the first listing.</p>
+            <button 
+              onClick={() => setShowCreateModal(true)}
+              className="px-6 py-3 bg-gradient-to-r from-blue-500 to-purple-600 rounded-lg font-medium hover:from-blue-600 hover:to-purple-700 transition-colors"
+            >
+              Create Listing
+            </button>
+          </div>
+        )}
+
         {/* Skill Listings Grid */}
         <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
-          {mockListings.map((listing, index) => (
+          {listings.map((listing, index) => (
             <motion.div
               key={listing.id}
               initial={{ opacity: 0, y: 20 }}
@@ -199,8 +341,11 @@ export default function SkillsPage() {
 
               {/* Footer */}
               <div className="flex items-center justify-between pt-4 border-t border-gray-800">
-                <span className="text-xs text-gray-500">{listing.timestamp}</span>
-                <button className="px-4 py-2 bg-gradient-to-r from-blue-500 to-purple-600 rounded-lg text-sm font-medium hover:from-blue-600 hover:to-purple-700 transition-colors">
+                <span className="text-xs text-gray-500">{listing.timestamp || ""}</span>
+                <button 
+                  onClick={() => setProposeForListingId(listing.id)}
+                  className="px-4 py-2 bg-gradient-to-r from-blue-500 to-purple-600 rounded-lg text-sm font-medium hover:from-blue-600 hover:to-purple-700 transition-colors"
+                >
                   Propose Trade
                 </button>
               </div>
@@ -209,7 +354,7 @@ export default function SkillsPage() {
         </div>
 
         {/* Empty State */}
-        {mockListings.length === 0 && (
+        {!loading && !error && listings.length === 0 && (
           <motion.div
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
@@ -217,13 +362,167 @@ export default function SkillsPage() {
           >
             <Search className="w-16 h-16 text-gray-600 mx-auto mb-4" />
             <h3 className="text-2xl font-semibold mb-2 text-gray-400">No skills found</h3>
-            <p className="text-gray-500 mb-6">Try adjusting your search or filters</p>
-            <button className="px-6 py-3 bg-gradient-to-r from-blue-500 to-purple-600 rounded-lg font-medium hover:from-blue-600 hover:to-purple-700 transition-colors">
+            <p className="text-gray-500 mb-6">Be the first to create a skill listing!</p>
+            <button 
+              onClick={() => setShowCreateModal(true)}
+              className="px-6 py-3 bg-gradient-to-r from-blue-500 to-purple-600 rounded-lg font-medium hover:from-blue-600 hover:to-purple-700 transition-colors"
+            >
               Create First Listing
             </button>
           </motion.div>
         )}
       </div>
+
+      {/* Create Listing Modal */}
+      {showCreateModal && (
+        <div className="fixed inset-0 bg-black/50 backdrop-blur-sm z-50 flex items-center justify-center p-4">
+          <motion.div
+            initial={{ opacity: 0, scale: 0.95 }}
+            animate={{ opacity: 1, scale: 1 }}
+            className="bg-gray-900 border border-gray-800 rounded-2xl p-8 w-full max-w-md"
+          >
+            <div className="flex items-center justify-between mb-6">
+              <h2 className="text-2xl font-bold text-white">Create Skill Listing</h2>
+              <button
+                onClick={() => setShowCreateModal(false)}
+                className="text-gray-400 hover:text-white transition-colors"
+              >
+                <X className="w-6 h-6" />
+              </button>
+            </div>
+
+            <div className="space-y-4">
+              <div>
+                <label className="block text-sm font-medium text-gray-300 mb-2">
+                  Skill You Offer
+                </label>
+                <input
+                  type="text"
+                  value={createForm.skillOffered}
+                  onChange={(e) => setCreateForm({ ...createForm, skillOffered: e.target.value })}
+                  placeholder="e.g., Web Development"
+                  className="w-full px-4 py-3 bg-gray-800 border border-gray-700 rounded-lg text-white placeholder-gray-400 focus:outline-none focus:border-blue-500 transition-colors"
+                />
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium text-gray-300 mb-2">
+                  Skill You Want
+                </label>
+                <input
+                  type="text"
+                  value={createForm.skillWanted}
+                  onChange={(e) => setCreateForm({ ...createForm, skillWanted: e.target.value })}
+                  placeholder="e.g., Graphic Design"
+                  className="w-full px-4 py-3 bg-gray-800 border border-gray-700 rounded-lg text-white placeholder-gray-400 focus:outline-none focus:border-blue-500 transition-colors"
+                />
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium text-gray-300 mb-2">
+                  Description
+                </label>
+                <textarea
+                  value={createForm.description}
+                  onChange={(e) => setCreateForm({ ...createForm, description: e.target.value })}
+                  placeholder="Describe what you can offer and what you're looking for..."
+                  rows={4}
+                  className="w-full px-4 py-3 bg-gray-800 border border-gray-700 rounded-lg text-white placeholder-gray-400 focus:outline-none focus:border-blue-500 transition-colors resize-none"
+                />
+              </div>
+
+              <div className="flex gap-3 pt-4">
+                <button
+                  onClick={() => setShowCreateModal(false)}
+                  className="flex-1 px-4 py-3 bg-gray-800 hover:bg-gray-700 rounded-lg text-white font-medium transition-colors"
+                >
+                  Cancel
+                </button>
+                <button
+                  onClick={handleCreateListing}
+                  disabled={isPending || isConfirming}
+                  className="flex-1 px-4 py-3 bg-gradient-to-r from-blue-500 to-purple-600 hover:from-blue-600 hover:to-purple-700 disabled:opacity-50 disabled:cursor-not-allowed rounded-lg text-white font-medium transition-colors"
+                >
+                  {isPending ? "Confirming..." : isConfirming ? "Creating..." : "Create Listing"}
+                </button>
+              </div>
+
+              {writeError && (
+                <div className="text-red-400 text-sm mt-2">
+                  Error: {writeError.message}
+                </div>
+              )}
+            </div>
+          </motion.div>
+        </div>
+      )}
+
+      {/* Propose Trade Modal */}
+      {proposeForListingId !== null && (
+        <div className="fixed inset-0 bg-black/50 backdrop-blur-sm z-50 flex items-center justify-center p-4">
+          <motion.div
+            initial={{ opacity: 0, scale: 0.95 }}
+            animate={{ opacity: 1, scale: 1 }}
+            className="bg-gray-900 border border-gray-800 rounded-2xl p-8 w-full max-w-md"
+          >
+            <div className="flex items-center justify-between mb-6">
+              <h2 className="text-2xl font-bold text-white">Propose Trade</h2>
+              <button
+                onClick={() => setProposeForListingId(null)}
+                className="text-gray-400 hover:text-white transition-colors"
+              >
+                <X className="w-6 h-6" />
+              </button>
+            </div>
+
+            <div className="space-y-4">
+              <div className="text-gray-400 text-sm">Listing ID: {proposeForListingId}</div>
+              <textarea
+                value={proposalText}
+                onChange={(e) => setProposalText(e.target.value)}
+                placeholder="Describe your exchange proposal..."
+                rows={4}
+                className="w-full px-4 py-3 bg-gray-800 border border-gray-700 rounded-lg text-white placeholder-gray-400 focus:outline-none focus:border-blue-500 transition-colors resize-none"
+              />
+              <div className="flex gap-3 pt-2">
+                <button
+                  onClick={() => setProposeForListingId(null)}
+                  className="flex-1 px-4 py-3 bg-gray-800 hover:bg-gray-700 rounded-lg text-white font-medium transition-colors"
+                >
+                  Cancel
+                </button>
+                <button
+                  onClick={async () => {
+                    if (!isConnected) { toast.error("Connect wallet first"); return }
+                    if (!proposalText.trim()) { toast.error("Proposal cannot be empty"); return }
+                    try {
+                      const p = writeContractAsync({
+                        chainId: 296,
+                        address: CONTRACT_EVM_ADDRESS,
+                        abi: CONTRACT_ABI,
+                        functionName: "createBarterProposal",
+                        args: [BigInt(proposeForListingId), proposalText.trim()],
+                      })
+                      await toast.promise(p, {
+                        loading: "Submitting proposal...",
+                        success: "Proposal submitted",
+                        error: "Failed to submit proposal",
+                      })
+                      setProposeForListingId(null)
+                      setProposalText("")
+                    } catch (e) {
+                      console.error(e)
+                    }
+                  }}
+                  className="flex-1 px-4 py-3 bg-gradient-to-r from-blue-500 to-purple-600 hover:from-blue-600 hover:to-purple-700 rounded-lg text-white font-medium transition-colors"
+                >
+                  Send Proposal
+                </button>
+              </div>
+            </div>
+          </motion.div>
+        </div>
+      )}
     </div>
   )
 }
