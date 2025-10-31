@@ -21,6 +21,7 @@ import { useAccount } from "wagmi"
 import { useConnectModal } from "@rainbow-me/rainbowkit"
 import { CONTRACT_EVM_ADDRESS, CONTRACT_ABI } from "../../lib/contract"
 import { useWriteContract, useWaitForTransactionReceipt } from "wagmi"
+import { hederaTestnet } from "../../lib/wallet"
 import toast from "react-hot-toast"
 import { readUser, readUserListings, readUserProposals, readBarterProposal, readUserNFTs, readListing } from "../../lib/utils"
 
@@ -205,7 +206,7 @@ export default function ProfilePage() {
       const skillsWantedArray = registerForm.skillsWanted.split(',').map(s => s.trim()).filter(s => s)
       
       const p = writeContractAsync({
-        chainId: 296,
+        chain: hederaTestnet,
         address: CONTRACT_EVM_ADDRESS,
         abi: CONTRACT_ABI,
         functionName: "registerUser",
@@ -251,7 +252,7 @@ export default function ProfilePage() {
   const acceptProposal = async (proposalId: number) => {
     try {
       const p = writeContractAsync({
-        chainId: 296,
+        chain: hederaTestnet,
         address: CONTRACT_EVM_ADDRESS,
         abi: CONTRACT_ABI,
         functionName: "acceptBarterProposal",
@@ -263,7 +264,7 @@ export default function ProfilePage() {
   const completeProposal = async (proposalId: number) => {
     try {
       const p = writeContractAsync({
-        chainId: 296,
+        chain: hederaTestnet,
         address: CONTRACT_EVM_ADDRESS,
         abi: CONTRACT_ABI,
         functionName: "markBarterCompleted",
@@ -275,7 +276,7 @@ export default function ProfilePage() {
   const disputeProposal = async (proposalId: number, reason: string) => {
     try {
       const p = writeContractAsync({
-        chainId: 296,
+        chain: hederaTestnet,
         address: CONTRACT_EVM_ADDRESS,
         abi: CONTRACT_ABI,
         functionName: "raiseDispute",

@@ -23,6 +23,7 @@ import Link from "next/link"
 import { readTotalListings, readListing } from "../../lib/utils"
 import { useAccount, useWriteContract, useWaitForTransactionReceipt } from "wagmi"
 import { CONTRACT_EVM_ADDRESS, CONTRACT_ABI } from "../../lib/contract"
+import { hederaTestnet } from "../../lib/wallet"
 import { readUser } from "../../lib/utils"
 import { useConnectModal } from "@rainbow-me/rainbowkit"
 import toast from "react-hot-toast"
@@ -133,7 +134,7 @@ export default function SkillsPage() {
       if (address) {
         try {
           const reg = writeContractAsync({
-            chainId: 296,
+            chain: hederaTestnet,
             address: CONTRACT_EVM_ADDRESS,
             abi: CONTRACT_ABI,
             functionName: "registerUser",
@@ -146,7 +147,7 @@ export default function SkillsPage() {
       }
 
       const p = writeContractAsync({
-        chainId: 296,
+        chain: hederaTestnet,
         address: CONTRACT_EVM_ADDRESS,
         abi: CONTRACT_ABI,
         functionName: "createSkillListing",
@@ -497,7 +498,7 @@ export default function SkillsPage() {
                     if (!proposalText.trim()) { toast.error("Proposal cannot be empty"); return }
                     try {
                       const p = writeContractAsync({
-                        chainId: 296,
+                        chain: hederaTestnet,
                         address: CONTRACT_EVM_ADDRESS,
                         abi: CONTRACT_ABI,
                         functionName: "createBarterProposal",
