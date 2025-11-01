@@ -1,6 +1,25 @@
 # SkillSwap Frontend
 
-A sleek and modern Next.js frontend for the SkillSwap platform - a peer-to-peer skill exchange marketplace built on Hedera Hashgraph.
+Frontend for the SkillSwap platform - a peer-to-peer skill exchange marketplace built on Hedera Hashgraph.
+
+# Details
+###  View on HashScan
+Visit: https://hashscan.io/testnet/contract/0.0.7158163
+###  Pitch Deck
+https://gamma.app/docs/SkillSwap-s19017rjghdlvl9
+### Link to Hedera course certificate
+https://drive.google.com/file/d/1M_fZHqiJFAc2c77TpdqIPsFBem0AUzSk/view?usp=sharing
+###  Live link
+https://skillswap-git-frontend-rampop01s-projects.vercel.app/
+
+## Deployment Summary
+
+**Contract Deployed Successfully!**
+- **Contract ID**: `0.0.7158163`
+- **EVM Address**: `0x00000000000000000000000000000000006d3993`
+- **Network**: Hedera Testnet
+- **Explorer**: https://hashscan.io/testnet/contract/0.0.7158163
+- **Account ID**: `0.0.6496415`
 
 ## Features
 
@@ -21,12 +40,6 @@ A sleek and modern Next.js frontend for the SkillSwap platform - a peer-to-peer 
 - Beautiful NFT cards with metadata and details
 - Profile integration showing all earned NFTs
 
-🚀 **Technologies**
-- Next.js 16 with App Router
-- TypeScript for type safety
-- Tailwind CSS for styling
-- Framer Motion for animations
-- Lucide React for icons
 
 ## Getting Started
 
