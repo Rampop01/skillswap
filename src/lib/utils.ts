@@ -1,6 +1,8 @@
 import { createPublicClient, http } from "viem"
 import { hederaTestnet } from "./wallet"
 import { CONTRACT_EVM_ADDRESS, CONTRACT_ABI, SkillListing } from "./contract"
+import { type ClassValue, clsx } from "clsx"
+import { twMerge } from "tailwind-merge"
 
 export const publicClient = createPublicClient({
   chain: hederaTestnet,
@@ -162,9 +164,49 @@ export async function readTotalProposals(): Promise<number> {
   }
 }
 
+export async function readNFTMetadata(tokenId: number): Promise<{
+  owner: `0x${string}` | null
+  exists: boolean
+}> {
+  try {
+    const [owner, exists] = await Promise.all([
+      publicClient.readContract({
+        address: CONTRACT_EVM_ADDRESS,
+        abi: CONTRACT_ABI,
+        functionName: "ownerOf",
+        args: [BigInt(tokenId)],
+      }).catch(() => null),
+      publicClient.readContract({
+        address: CONTRACT_EVM_ADDRESS,
+        abi: CONTRACT_ABI,
+        functionName: "exists",
+        args: [BigInt(tokenId)],
+      }).catch(() => false),
+    ])
+    return {
+      owner: owner as `0x${string}` | null,
+      exists: Boolean(exists),
+    }
+  } catch (error) {
+    console.error(`Error reading NFT ${tokenId}:`, error)
+    return { owner: null, exists: false }
+  }
+}
 
-import { type ClassValue, clsx } from "clsx"
-import { twMerge } from "tailwind-merge"
+export async function readAllNFTs(): Promise<{
+  tokenId: number
+  owner: `0x${string}`
+}[]> {
+  try {
+    // Since there's no totalSupply function, we'll need to iterate
+    // For now, return empty array as a fallback
+    // In production, you'd want to track NFT creation events or have a supply counter
+    return []
+  } catch (error) {
+    console.error("Error reading all NFTs:", error)
+    return []
+  }
+}
 
 export function cn(...inputs: ClassValue[]) {
   return twMerge(clsx(inputs))

@@ -14,7 +14,8 @@ import {
   CheckCircle,
   Clock,
   Star,
-  Plus
+  Plus,
+  Sparkles
 } from "lucide-react"
 import Link from "next/link"
 import { useAccount } from "wagmi"
@@ -486,19 +487,54 @@ export default function ProfilePage() {
               animate={{ opacity: 1 }}
               className="bg-gray-900/50 backdrop-blur-sm border border-gray-800 rounded-2xl p-8"
             >
-              <h3 className="text-xl font-semibold text-white mb-6">My Skill NFTs</h3>
-              <div className="grid md:grid-cols-3 gap-6">
-                {nfts.map((nft) => (
-                  <div key={nft.id} className="bg-gray-800 rounded-xl p-6 border border-gray-700 hover:border-blue-500 transition-colors">
-                    <div className="w-full h-32 bg-gradient-to-br from-blue-500 to-purple-600 rounded-xl mb-4 flex items-center justify-center text-white text-4xl font-bold">
-                      <Award className="w-16 h-16" />
-                    </div>
-                    <h4 className="font-semibold text-white mb-2">{nft.skill}</h4>
-                    <p className="text-sm text-gray-400">Exchange with: {nft.partner}</p>
-                    <p className="text-xs text-gray-500 mt-2">{nft.date}</p>
-                  </div>
-                ))}
+              <div className="flex items-center justify-between mb-6">
+                <h3 className="text-xl font-semibold text-white">My Skill NFTs</h3>
+                <Link 
+                  href="/marketplace"
+                  className="px-4 py-2 bg-gradient-to-r from-yellow-500 to-orange-600 rounded-lg text-white text-sm font-medium hover:from-yellow-600 hover:to-orange-700 transition-colors flex items-center gap-2"
+                >
+                  <Sparkles className="w-4 h-4" />
+                  Marketplace
+                </Link>
               </div>
+              {nfts.length === 0 ? (
+                <div className="text-center py-12">
+                  <Award className="w-20 h-20 text-gray-700 mx-auto mb-4" />
+                  <h4 className="text-xl font-semibold text-gray-400 mb-2">No NFTs yet</h4>
+                  <p className="text-gray-500 mb-6">Complete a skill exchange to earn your first NFT!</p>
+                  <Link 
+                    href="/skills"
+                    className="inline-block px-6 py-3 bg-gradient-to-r from-blue-500 to-purple-600 rounded-lg font-medium hover:from-blue-600 hover:to-purple-700 transition-colors"
+                  >
+                    Browse Skills
+                  </Link>
+                </div>
+              ) : (
+                <div className="grid md:grid-cols-3 gap-6">
+                  {nfts.map((nft) => (
+                    <div key={nft.id} className="bg-gray-800 rounded-xl p-6 border border-gray-700 hover:border-blue-500 transition-colors group cursor-pointer relative overflow-hidden">
+                      <div className="absolute top-4 right-4 z-10">
+                        <div className="w-8 h-8 bg-blue-600 rounded-full flex items-center justify-center text-white text-xs font-bold">
+                          #{nft.id}
+                        </div>
+                      </div>
+                      <div className="w-full h-32 bg-gradient-to-br from-blue-500 via-purple-600 to-pink-600 rounded-xl mb-4 flex items-center justify-center text-white relative overflow-hidden">
+                        <div className="absolute inset-0 bg-black/10 group-hover:bg-black/20 transition-colors"></div>
+                        <Award className="w-16 h-16 opacity-70 group-hover:opacity-100 transition-opacity" />
+                      </div>
+                      <h4 className="font-semibold text-white mb-2 group-hover:text-blue-400 transition-colors">{nft.skill}</h4>
+                      <p className="text-sm text-gray-400">Exchange with: {nft.partner}</p>
+                      <p className="text-xs text-gray-500 mt-2">{nft.date}</p>
+                      <button
+                        onClick={() => window.location.href = `/marketplace`}
+                        className="mt-4 w-full px-4 py-2 bg-gray-700 hover:bg-gray-600 rounded-lg text-white text-sm font-medium transition-colors opacity-0 group-hover:opacity-100"
+                      >
+                        View Details
+                      </button>
+                    </div>
+                  ))}
+                </div>
+              )}
             </motion.div>
           )}
 

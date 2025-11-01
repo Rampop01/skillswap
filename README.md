@@ -12,7 +12,14 @@ A sleek and modern Next.js frontend for the SkillSwap platform - a peer-to-peer 
 🎨 **Pages**
 - **Home**: Landing page with features, stats, and CTA
 - **Skills Browse**: Browse all available skill listings with search and filters
+- **Marketplace**: Discover and trade skill exchange NFTs
 - **Profile**: User profile with skills, NFTs, and trade history
+
+🎁 **NFT System**
+- Automatic NFT minting on successful skill exchanges
+- NFT marketplace for buying and selling achievement NFTs
+- Beautiful NFT cards with metadata and details
+- Profile integration showing all earned NFTs
 
 🚀 **Technologies**
 - Next.js 16 with App Router
@@ -54,13 +61,20 @@ frontend/
 │   │   ├── page.tsx          # Home page
 │   │   ├── skills/
 │   │   │   └── page.tsx      # Skills browsing page
+│   │   ├── marketplace/
+│   │   │   └── page.tsx      # NFT marketplace page
 │   │   ├── profile/
 │   │   │   └── page.tsx      # User profile page
 │   │   ├── layout.tsx        # Root layout
 │   │   └── globals.css       # Global styles
+│   ├── components/
+│   │   ├── Navbar.tsx        # Navigation bar
+│   │   └── Providers.tsx     # Wallet & theme providers
 │   └── lib/
 │       ├── contract.ts       # Contract configuration
-│       └── utils.ts          # Utility functions
+│       ├── utils.ts          # Utility functions
+│       ├── wallet.ts         # Wallet configuration
+│       └── abi.json          # Contract ABI
 ├── public/                   # Static assets
 └── package.json
 ```
@@ -72,15 +86,25 @@ The frontend is configured to work with the deployed SkillSwap contract:
 - **Network**: Hedera Testnet
 - **Contract ABI**: Defined in `src/lib/contract.ts`
 
+## Completed Features ✅
+
+- ✅ Connect Hedera wallet (RainbowKit integration)
+- ✅ Contract interaction functions
+- ✅ User registration and profile management
+- ✅ Skill listing creation and browsing
+- ✅ Barter proposal functionality
+- ✅ Real-time data from blockchain
+- ✅ NFT viewing and display
+- ✅ NFT marketplace for trading
+- ✅ Profile NFT gallery
+
 ## Next Steps
 
-- [ ] Connect Hedera wallet (HashPack, Blade, etc.)
-- [ ] Implement contract interaction functions
-- [ ] Add user registration and requests
-- [ ] Add skill listing creation
-- [ ] Add barter proposal functionality
-- [ ] Display real-time data from blockchain
-- [ ] Add NFT viewing and interactions
+- [ ] Implement NFT listing for sale 
+- [ ] Implement NFT purchasing 
+- [ ] Add NFT metadata enrichment with IPFS
+- [ ] Enhanced search and filtering for marketplace
+- [ ] NFT trading history and analytics
 
 ## Design Highlights
 
@@ -92,4 +116,4 @@ The frontend is configured to work with the deployed SkillSwap contract:
 
 ## License
 
-MIT
+

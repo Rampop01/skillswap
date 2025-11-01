@@ -1,10 +1,9 @@
 "use client"
 
-import { useState } from "react"
+import { useState, useEffect } from "react"
 import { motion } from "framer-motion"
 import { useConnectModal } from "@rainbow-me/rainbowkit"
 import { 
-  Sparkles, 
   Users, 
   Handshake, 
   Award, 
@@ -15,14 +14,21 @@ import {
   Zap,
   Heart,
   CheckCircle,
-  ArrowRight
+  ArrowRight,
+  FileText,
+  BarChart3
 } from "lucide-react"
 import Link from "next/link"
+import { readTotalListings, readTotalProposals } from "../lib/utils"
 
 export default function Home() {
   const [isRegistered, setIsRegistered] = useState(false)
   const [showRegisterForm, setShowRegisterForm] = useState(false)
   const { openConnectModal } = useConnectModal()
+  const [liveStats, setLiveStats] = useState({
+    skillListings: 0,
+    totalProposals: 0
+  })
 
   const features = [
     {
@@ -47,11 +53,46 @@ export default function Home() {
     },
   ]
 
+  // Fetch live stats from contract
+  useEffect(() => {
+    async function loadStats() {
+      try {
+        const [listings, proposals] = await Promise.all([
+          readTotalListings(),
+          readTotalProposals()
+        ])
+        setLiveStats({
+          skillListings: listings,
+          totalProposals: proposals
+        })
+      } catch (error) {
+        console.error("Error loading stats:", error)
+      }
+    }
+    loadStats()
+  }, [])
+
   const stats = [
-    { value: "0", label: "Active Users" },
-    { value: "0", label: "Skill Listings" },
-    { value: "0", label: "Completed Trades" },
-    { value: "100%", label: "User Satisfaction" },
+    { 
+      value: liveStats.skillListings.toString(), 
+      label: "Skill Listings",
+      icon: <FileText className="w-5 h-5 text-blue-400" />
+    },
+    { 
+      value: liveStats.totalProposals.toString(), 
+      label: "Active Trades",
+      icon: <Handshake className="w-5 h-5 text-purple-400" />
+    },
+    { 
+      value: "∞", 
+      label: "NFT Awards",
+      icon: <Award className="w-5 h-5 text-pink-400" />
+    },
+    { 
+      value: "100%", 
+      label: "Decentralized",
+      icon: <BarChart3 className="w-5 h-5 text-green-400" />
+    },
   ]
 
   return (
@@ -80,14 +121,14 @@ export default function Home() {
               {/* Navigation moved to shared Navbar */}
 
       {/* Hero Section */}
-      <section className="container mx-auto px-6 py-20">
+      <section className="container mx-auto px-6 py-40">
         <motion.div
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.6 }}
           className="text-center max-w-4xl mx-auto"
         >
-          <h1 className="text-6xl md:text-7xl font-bold mb-6 bg-gradient-to-r from-blue-400 via-purple-500 to-pink-500 bg-clip-text text-transparent">
+          <h1 className="text-6xl md:text-7xl font-bold mb-6 bg-white bg-clip-text text-transparent">
             Trade Skills,
             <br />
             Not Money
@@ -121,9 +162,10 @@ export default function Home() {
             <motion.div
               key={index}
               whileHover={{ scale: 1.05 }}
-              className="bg-gray-900/50 backdrop-blur-sm border border-gray-800 rounded-2xl p-6 text-center"
+              className="bg-gray-900/50 backdrop-blur-sm border border-gray-800 rounded-2xl p-6 text-center group hover:border-blue-500 transition-all"
             >
-              <div className="text-3xl font-bold text-blue-400 mb-2">{stat.value}</div>
+              <div className="flex justify-center mb-3">{stat.icon}</div>
+              <div className="text-3xl font-bold text-blue-400 mb-2 group-hover:text-purple-400 transition-colors">{stat.value}</div>
               <div className="text-gray-400 text-sm">{stat.label}</div>
             </motion.div>
           ))}
@@ -233,12 +275,28 @@ export default function Home() {
         <div className="container mx-auto px-6">
           <div className="flex flex-col md:flex-row justify-between items-center">
             <div className="flex items-center space-x-2 mb-4 md:mb-0">
-              <div className="w-8 h-8 bg-gradient-to-br from-blue-500 to-purple-600 rounded-lg flex items-center justify-center">
-                <Sparkles className="w-5 h-5 text-white" />
+              <div className="text-4xl font-black bg-gradient-to-br from-blue-400 via-purple-500 to-pink-500 bg-clip-text text-transparent leading-none">
+                S
               </div>
-              <span className="text-xl font-bold bg-gradient-to-r from-blue-400 to-purple-600 bg-clip-text text-transparent">
-                SkillSwap
-              </span>
+              <div className="flex flex-col leading-tight">
+                <span className="text-base font-light italic text-white tracking-wide">
+                  skill
+                </span>
+                <span className="text-xs font-bold text-gray-500 tracking-widest">
+                  swap
+                </span>
+              </div>
+            </div>
+            <div className="flex items-center gap-6 mb-4 md:mb-0">
+              <Link href="/skills" className="text-gray-400 hover:text-white transition-colors text-sm">
+                Browse Skills
+              </Link>
+              <Link href="/marketplace" className="text-gray-400 hover:text-white transition-colors text-sm">
+                Marketplace
+              </Link>
+              <Link href="/profile" className="text-gray-400 hover:text-white transition-colors text-sm">
+                Profile
+              </Link>
             </div>
           <div className="text-gray-400 text-sm">
             Built on Hedera Hashgraph • Contract: 0.0.7158163
